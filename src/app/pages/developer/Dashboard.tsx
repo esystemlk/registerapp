@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/ca
 import { Badge } from '../../components/ui/badge';
 import { BookOpen, LogOut, Code, Database, Server, Lock, Zap, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { listUsers, listAllBookings, listLecturers, updateUserRole } from '../../services/db';
+import { listUsers, listAllBookings, listLecturers, updateUserRole, sendTestNotification } from '../../services/db';
+import { toast } from 'sonner';
 import HeaderBar from '../../components/HeaderBar';
 
 export default function DeveloperDashboard() {
@@ -117,6 +118,35 @@ export default function DeveloperDashboard() {
                 <Users className="w-4 h-4" style={{ color: '#8b5cf6' }} />
                 <span className="text-sm">Super Admin</span>
               </button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Push Notifications */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Zap className="w-5 h-5" style={{ color: '#10b981' }} />
+              Push Notifications
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-3">
+              <Button
+                variant="outline"
+                onClick={async () => {
+                  if (!user?.id) return;
+                  try {
+                    await sendTestNotification(user.id, 'Test notification', 'This is a test push from Developer page');
+                    toast.success('Test notification queued');
+                  } catch (e) {
+                    toast.error('Failed to queue notification');
+                  }
+                }}
+              >
+                Send Test Notification
+              </Button>
+              <span className="text-xs text-gray-600">Requires FCM token saved for your user</span>
             </div>
           </CardContent>
         </Card>

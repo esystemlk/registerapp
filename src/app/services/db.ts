@@ -308,3 +308,14 @@ export const updateSupportTicket = async (id: string, patch: any) => {
   if (!FIREBASE_ENABLED) return;
   await updateDoc(doc(db, 'support', id), { ...patch, updatedAt: new Date().toISOString() } as any);
 };
+
+export const sendTestNotification = async (toUserId: string, title: string = 'Test notification', body: string = 'Push delivery test') => {
+  if (!FIREBASE_ENABLED) return;
+  await addDoc(collection(db, 'notificationEvents'), {
+    type: 'TEST_NOTIFICATION',
+    toUserId,
+    title,
+    body,
+    at: new Date().toISOString(),
+  } as any);
+};

@@ -4,6 +4,7 @@ import { auth, db, googleProvider, FIREBASE_ENABLED } from './firebase';
 import { onAuthStateChanged, signInWithEmailAndPassword, signInWithPopup, signInWithRedirect, signOut } from 'firebase/auth';
 import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 import { Capacitor } from '@capacitor/core';
+import { requestNotifications } from './messaging';
 
 interface AuthContextType {
   user: User | null;
@@ -52,6 +53,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           avatar: d.avatarUrl || prev.avatar,
         } : prev);
       });
+      try {
+        if (typeof Notification !== 'undefined' && Notification.permission !== 'granted') {
+          await requestNotifications();
+        }
+      } catch {}
     });
     return () => {
       if (docUnsub) { try { docUnsub(); } catch {} }

@@ -16,9 +16,31 @@ export const onNotificationEvent = functions.firestore
   .document('notificationEvents/{eventId}')
   .onCreate(async (snap) => {
     const event = snap.data() as any;
-    const bookingId = event.bookingId;
-    if (!bookingId) return;
     try {
+      // Handle simple test notification without booking context
+      if (event.type === 'TEST_NOTIFICATION') {
+        const targetUserId: string | undefined = event.toUserId || event.userId;
+        if (!targetUserId) return;
+        const uSnap = await db.doc(`users/${targetUserId}`).get();
+        const data = uSnap.data() || {};
+        const map = (data.fcmTokens || {}) as Record<string, boolean>;
+        const tokens = Object.keys(map);
+        if (!tokens.length) return;
+        const title = event.title || 'Test notification';
+        const body = event.body || 'Push delivery test';
+        const message: admin.messaging.MulticastMessage = {
+          tokens,
+          notification: { title, body },
+          data: {
+            type: event.type,
+          },
+        };
+        await admin.messaging().sendEachForMulticast(message);
+        return;
+      }
+
+      const bookingId = event.bookingId;
+      if (!bookingId) return;
       const bookingSnap = await db.doc(`bookings/${bookingId}`).get();
       if (!bookingSnap.exists) return;
       const booking = bookingSnap.data() as any;
