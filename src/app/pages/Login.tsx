@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../AuthContext';
 import { getDashboardRoute } from '../mockData';
@@ -14,6 +14,11 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const { loginWithEmail, loginWithGoogle, user } = useAuth();
   const navigate = useNavigate();
+  useEffect(() => {
+    if (user) {
+      navigate(getDashboardRoute(user.role));
+    }
+  }, [user, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,10 +30,6 @@ export default function Login() {
       toast.error(err?.message || 'Sign in failed');
     }
   };
-
-  if (user) {
-    navigate(getDashboardRoute(user.role));
-  }
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4" style={{ backgroundColor: '#ffffff' }}>
