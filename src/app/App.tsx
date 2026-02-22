@@ -5,6 +5,7 @@ import { Toaster } from './components/ui/sonner';
 import { useEffect, useMemo, useState } from 'react';
 import { initMessaging, requestNotifications } from './messaging';
 import { Button } from './components/ui/button';
+import { toast } from './components/ui/sonner';
 
 export default function App() {
   const [showNotif, setShowNotif] = useState(false);
@@ -28,7 +29,14 @@ export default function App() {
               Enable notifications to receive booking updates, reminders, and messages.
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" onClick={async () => { await requestNotifications(); try { setShowNotif(Notification.permission !== 'granted'); } catch {} }}>
+              <Button variant="outline" onClick={async () => {
+                await requestNotifications();
+                try {
+                  setShowNotif(typeof Notification !== 'undefined' && Notification.permission !== 'granted');
+                } catch {
+                  setShowNotif(false);
+                }
+              }}>
                 Enable Notifications
               </Button>
             </div>
