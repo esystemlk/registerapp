@@ -1,0 +1,29 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() { return request.auth != null; }
+    function hasRole(role) { return isSignedIn() && request.auth.token.role == role; }
+    match /users/{uid} {
+      allow read: if isSignedIn();
+      allow write: if hasRole('SUPER_ADMIN') || request.auth.uid == uid;
+    }
+    match /lecturers/{id} {
+      allow read: if true;
+      allow write: if hasRole('ADMIN') || hasRole('SUPER_ADMIN');
+    }
+    match /availability/{id} {
+      allow read: if true;
+      allow update: if hasRole('LECTURER') || hasRole('ADMIN') || hasRole('SUPER_ADMIN');
+      allow create: if hasRole('LECTURER') || hasRole('ADMIN') || hasRole('SUPER_ADMIN');
+    }
+    match /bookings/{id} {
+      allow read: if isSignedIn() && (
+        resource.data.studentId == request.auth.uid ||
+        resource.data.lecturerId in get(/databases/$(database)/documents/lecturers/*).data.id ||
+        hasRole('ADMIN') || hasRole('SUPER_ADMIN')
+      );
+      allow create: if isSignedIn() && request.resource.data.studentId == request.auth.uid;
+      allow update: if hasRole('ADMIN') || hasRole('SUPER_ADMIN') || (isSignedIn() && request.resource.data.studentId == request.auth.uid);
+    }
+  }
+}
