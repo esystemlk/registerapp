@@ -90,6 +90,10 @@ export default function Login() {
             >
               Continue with Google
             </Button>
+            <div className="text-center text-xs text-gray-600 mt-3">
+              Don&apos;t have an account?{' '}
+              <button className="underline" onClick={() => navigate('/register')}>Register</button>
+            </div>
           </div>
         </CardContent>
       </Card>

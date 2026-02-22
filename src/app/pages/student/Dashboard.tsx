@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../..
 import { Input } from '../../components/ui/input';
 import { BookOpen, LogOut, Search, Star, Calendar, DollarSign } from 'lucide-react';
 import { Lecturer } from '../../types';
+import HeaderBar from '../../components/HeaderBar';
 
 export default function StudentDashboard() {
   const { user, logout } = useAuth();
@@ -42,25 +43,7 @@ export default function StudentDashboard() {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#f8f9fa' }}>
-      {/* Header */}
-      <div className="sticky top-0 z-10 shadow-sm" style={{ backgroundColor: '#0066FF' }}>
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <img src="/logo.png" alt="smartlabs" className="w-10 h-10 rounded-full bg-white object-cover" />
-              <p className="text-white/80 text-xs">Student Portal</p>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleLogout}
-              className="text-white hover:bg-white/20"
-            >
-              <LogOut className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-      </div>
+      <HeaderBar title="Student Portal" color="#0066FF" />
 
       <div className="max-w-7xl mx-auto px-4 py-6">
         {/* Welcome Section */}

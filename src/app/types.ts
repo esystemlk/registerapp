@@ -48,6 +48,8 @@ export interface Booking {
   subject: string;
   date: string;
   time: string;
+  availabilityId?: string;
+  slotId?: string;
   status: BookingStatus;
   paymentMethod: PaymentMethod;
   paymentStatus: PaymentStatus;

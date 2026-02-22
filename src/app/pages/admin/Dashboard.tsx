@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../AuthContext';
-import { listBookingsPending, updateBookingStatus, listUsers, updateUserRole, listAllBookings } from '../../services/db';
+import { listBookingsPending, updateBookingStatus, listUsers, updateUserRole, listAllBookings, listLecturers, publishAvailabilityCallable } from '../../services/db';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { BookOpen, LogOut, FileText, CheckCircle, XCircle, Clock, Users, DollarSign } from 'lucide-react';
 import { toast } from 'sonner';
+import HeaderBar from '../../components/HeaderBar';
 
 export default function AdminDashboard() {
   const { user, logout } = useAuth();
@@ -18,6 +19,9 @@ export default function AdminDashboard() {
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'CONFIRMED' | 'PENDING' | 'REJECTED' | 'CANCELLED'>('ALL');
   const [methodFilter, setMethodFilter] = useState<'ALL' | 'VISA' | 'RECEIPT'>('ALL');
   const [search, setSearch] = useState('');
+  const [lecturers, setLecturers] = useState<any[]>([]);
+  const [selectedLecturer, setSelectedLecturer] = useState<string>('');
+  const [publishDays, setPublishDays] = useState<number>(14);
 
   useEffect(() => {
     if (!user || !['ADMIN','SUPER_ADMIN','DEVELOPER'].includes(user.role)) {
@@ -28,6 +32,7 @@ export default function AdminDashboard() {
       setUsers(us.filter((u) => !['SUPER_ADMIN','DEVELOPER'].includes(u.role)));
     });
     listAllBookings().then(setAllBookings);
+    listLecturers().then(setLecturers);
   }, [user, navigate]);
 
   const handleLogout = () => {
@@ -154,25 +159,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#f8f9fa' }}>
-      {/* Header */}
-      <div className="sticky top-0 z-10 shadow-sm" style={{ backgroundColor: '#0066FF' }}>
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <img src="/logo.png" alt="smartlabs" className="w-10 h-10 rounded-full bg-white object-cover" />
-              <p className="text-white/80 text-xs">Admin Portal</p>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleLogout}
-              className="text-white hover:bg-white/20"
-            >
-              <LogOut className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-      </div>
+      <HeaderBar title="Admin Portal" color="#0066FF" />
 
       <div className="max-w-7xl mx-auto px-4 py-6">
         {/* Welcome Section */}
@@ -207,6 +194,50 @@ export default function AdminDashboard() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Quick Links */}
+        <div className="flex gap-2 mb-4">
+          <Button variant="outline" onClick={() => navigate('/admin/analytics')}>Analytics</Button>
+          <Button variant="outline" onClick={() => navigate('/admin/kyc')}>KYC Review</Button>
+          <Button variant="outline" onClick={() => navigate('/admin/support')}>Support Inbox</Button>
+        </div>
+
+        {/* Publish Availability */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle style={{ color: '#0066FF' }}>Publish Availability</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-wrap items-center gap-2">
+            <select
+              className="border rounded px-2 py-1 text-sm"
+              value={selectedLecturer}
+              onChange={(e) => setSelectedLecturer(e.target.value)}
+            >
+              <option value="">Select lecturer</option>
+              {lecturers.map((l) => (
+                <option key={l.id} value={l.id}>{l.name} — {l.subject}</option>
+              ))}
+            </select>
+            <input
+              type="number"
+              min={1}
+              max={60}
+              className="border rounded px-2 py-1 text-sm w-24"
+              value={publishDays}
+              onChange={(e) => setPublishDays(parseInt(e.target.value || '14', 10))}
+            />
+            <Button
+              variant="outline"
+              onClick={async () => {
+                if (!selectedLecturer) return;
+                await publishAvailabilityCallable(selectedLecturer, Math.max(1, Math.min(60, publishDays || 14)));
+              }}
+            >
+              Publish
+            </Button>
+            <span className="text-xs text-gray-500">Generates dated availability from weekly template</span>
+          </CardContent>
+        </Card>
 
         {/* Tabs */}
         <Tabs defaultValue="pending" className="w-full">

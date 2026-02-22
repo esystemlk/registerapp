@@ -11,6 +11,14 @@ const AdminDashboard = lazy(() => import("./pages/admin/Dashboard"));
 const SuperAdminDashboard = lazy(() => import("./pages/super-admin/Dashboard"));
 const DeveloperDashboard = lazy(() => import("./pages/developer/Dashboard"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const Register = lazy(() => import("./pages/Register"));
+const Onboarding = lazy(() => import("./pages/Onboarding"));
+const ChatThread = lazy(() => import("./pages/chat/Thread"));
+const AdminAnalytics = lazy(() => import("./pages/admin/Analytics"));
+const StudentBookingDetails = lazy(() => import("./pages/student/BookingDetails"));
+const KYCReview = lazy(() => import("./pages/admin/KYCReview"));
+const SupportInbox = lazy(() => import("./pages/admin/SupportInbox"));
+const SupportNew = lazy(() => import("./pages/Support"));
 
 const withSuspense = (Component: any) => (props: any) =>
   <Suspense fallback={null}><Component {...props} /></Suspense>;
@@ -23,6 +31,42 @@ export const router = createBrowserRouter([
   {
     path: "/login",
     Component: withSuspense(Login),
+  },
+  {
+    path: "/register",
+    Component: withSuspense(Register),
+  },
+  {
+    path: "/onboarding",
+    Component: withSuspense(Onboarding),
+  },
+  {
+    path: "/profile",
+    Component: withSuspense(Onboarding),
+  },
+  {
+    path: "/chat/:bookingId",
+    Component: withSuspense(ChatThread),
+  },
+  {
+    path: "/admin/analytics",
+    Component: withSuspense(AdminAnalytics),
+  },
+  {
+    path: "/student/booking/:id",
+    Component: withSuspense(StudentBookingDetails),
+  },
+  {
+    path: "/admin/kyc",
+    Component: withSuspense(KYCReview),
+  },
+  {
+    path: "/admin/support",
+    Component: withSuspense(SupportInbox),
+  },
+  {
+    path: "/support",
+    Component: withSuspense(SupportNew),
   },
   {
     path: "/student",

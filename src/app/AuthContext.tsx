@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, UserRole } from './types';
 import { auth, db, googleProvider, FIREBASE_ENABLED } from './firebase';
 import { onAuthStateChanged, signInWithEmailAndPassword, signInWithPopup, signInWithRedirect, signOut } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 import { Capacitor } from '@capacitor/core';
 
 interface AuthContextType {
@@ -20,32 +20,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     if (!FIREBASE_ENABLED) return;
+    let docUnsub: any = null;
     const unsub = onAuthStateChanged(auth, async (fbUser) => {
       if (!fbUser) {
         setUser(null);
+        if (docUnsub) { try { docUnsub(); } catch {} }
         return;
       }
       const userRef = doc(db, 'users', fbUser.uid);
       const snap = await getDoc(userRef);
       let role: UserRole = 'STUDENT';
       let name = fbUser.displayName || fbUser.email || 'User';
+      let avatar = fbUser.photoURL || undefined;
       if (snap.exists()) {
         const d = snap.data() as any;
         role = (d.role as UserRole) || 'STUDENT';
         name = d.name || name;
+        avatar = d.avatarUrl || avatar;
       } else {
         await setDoc(userRef, { email: fbUser.email, name, role });
       }
-      setUser({
-        id: fbUser.uid,
-        email: fbUser.email || '',
-        name,
-        role,
-        password: '',
-        avatar: fbUser.photoURL || undefined,
+      setUser({ id: fbUser.uid, email: fbUser.email || '', name, role, password: '', avatar });
+      if (docUnsub) { try { docUnsub(); } catch {} }
+      docUnsub = onSnapshot(userRef, (docSnap) => {
+        const d = docSnap.data() as any;
+        if (!d) return;
+        setUser((prev) => prev ? {
+          ...prev,
+          name: d.name || prev.name,
+          role: (d.role as UserRole) || prev.role,
+          avatar: d.avatarUrl || prev.avatar,
+        } : prev);
       });
     });
-    return () => unsub && unsub();
+    return () => {
+      if (docUnsub) { try { docUnsub(); } catch {} }
+      unsub && unsub();
+    };
   }, []);
 
   const loginWithEmail = async (email: string, password: string) => {

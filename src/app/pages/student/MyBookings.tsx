@@ -1,13 +1,15 @@
 import { useNavigate } from 'react-router';
 import { useAuth } from '../../AuthContext';
 import { useEffect, useState } from 'react';
-import { listBookingsByStudent } from '../../services/db';
+import { listBookingsByStudent, listAvailabilityByLecturer, rescheduleBooking } from '../../services/db';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { ArrowLeft, Calendar, Clock, DollarSign, CreditCard, FileText } from 'lucide-react';
 import { Booking } from '../../types';
+import { bookingToICS } from '../../utils/calendar';
+import { toast } from 'sonner';
 
 export default function MyBookings() {
   const { user } = useAuth();
@@ -62,6 +64,54 @@ export default function MyBookings() {
     }
   };
 
+  const [rescheduleFor, setRescheduleFor] = useState<Booking | null>(null);
+  const [options, setOptions] = useState<Array<{ availabilityId: string; date: string; slotId: string; time: string }>>([]);
+  const [selected, setSelected] = useState<{ availabilityId: string; slotId: string; date: string; time: string } | null>(null);
+
+  const openReschedule = async (b: Booking) => {
+    setRescheduleFor(b);
+    try {
+      const av = await listAvailabilityByLecturer(b.lecturerId);
+      const opts: any[] = [];
+      av.forEach(a => {
+        (a.timeSlots || []).forEach((s: any) => {
+          if (s.available) {
+            opts.push({ availabilityId: a.id, date: a.date, slotId: s.id, time: s.time || s.id });
+          }
+        });
+      });
+      setOptions(opts);
+    } catch (e: any) {
+      toast.error(e?.message || 'Failed to load availability');
+    }
+  };
+
+  const confirmReschedule = async () => {
+    if (!rescheduleFor || !selected) return;
+    try {
+      await rescheduleBooking(
+        rescheduleFor.id,
+        (rescheduleFor as any).availabilityId || null,
+        (rescheduleFor as any).slotId || null,
+        selected.availabilityId,
+        selected.slotId,
+        selected.date,
+        selected.time
+      );
+      toast.success('Booking rescheduled');
+      setUserBookings((prev) => prev.map((x) =>
+        x.id === rescheduleFor.id
+          ? { ...x, date: selected.date, time: selected.time, availabilityId: selected.availabilityId, slotId: selected.slotId, status: 'CONFIRMED' }
+          : x
+      ));
+      setRescheduleFor(null);
+      setSelected(null);
+      setOptions([]);
+    } catch (e: any) {
+      toast.error(e?.message || 'Reschedule failed');
+    }
+  };
+
   const BookingCard = ({ booking, isPast = false }: { booking: any; isPast?: boolean }) => (
     <Card className={isPast ? 'opacity-75' : ''}>
       <CardContent className="p-4">
@@ -72,7 +122,7 @@ export default function MyBookings() {
           <div className="flex-1">
             <div className="flex items-start justify-between mb-2">
               <div>
-                <h3 className="font-semibold">{booking.lecturerName}</h3>
+                <h3 className="font-semibold cursor-pointer hover:underline" onClick={() => navigate(`/student/booking/${booking.id}`)}>{booking.lecturerName}</h3>
                 <p className="text-sm" style={{ color: '#0066FF' }}>
                   {booking.subject}
                 </p>
@@ -113,9 +163,38 @@ export default function MyBookings() {
                   {booking.paymentMethod === 'VISA' ? 'Card Payment' : 'Manual Payment'}
                 </span>
               </div>
-              <Badge variant="outline" style={getPaymentStatusColor(booking.paymentStatus)}>
-                {booking.paymentStatus}
-              </Badge>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" style={getPaymentStatusColor(booking.paymentStatus)}>
+                  {booking.paymentStatus}
+                </Badge>
+                {!isPast && (
+                  <>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        const blob = bookingToICS(booking);
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `booking-${booking.id}.ics`;
+                        a.click();
+                        URL.revokeObjectURL(url);
+                      }}
+                    >
+                      Add to Calendar
+                    </Button>
+                    <Button size="sm" onClick={() => openReschedule(booking)}>Reschedule</Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => navigate(`/chat/${booking.id}`)}
+                    >
+                      Chat
+                    </Button>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -191,6 +270,41 @@ export default function MyBookings() {
           </TabsContent>
         </Tabs>
       </div>
+      {rescheduleFor && (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-xl max-w-lg w-full p-4">
+            <h3 className="text-lg font-semibold mb-2" style={{ color: '#0066FF' }}>
+              Reschedule: {rescheduleFor.subject}
+            </h3>
+            <p className="text-sm text-gray-600 mb-3">Choose a new available slot</p>
+            <div className="max-h-64 overflow-auto border rounded-lg">
+              {options.length ? (
+                <ul>
+                  {options.map((o) => (
+                    <li key={`${o.availabilityId}-${o.slotId}`}>
+                      <label className="flex items-center gap-3 p-2 hover:bg-gray-50 roofs">
+                        <input
+                          type="radio"
+                          name="slot"
+                          checked={selected?.availabilityId === o.availabilityId && selected?.slotId === o.slotId}
+                          onChange={() => setSelected(o)}
+                        />
+                        <span>{new Date(o.date).toLocaleDateString()} — {o.time}</span>
+                      </label>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="p-3 text-sm text-gray-600">No free slots available for this lecturer.</div>
+              )}
+            </div>
+            <div className="flex justify-end gap-2 mt-3">
+              <Button variant="outline" onClick={() => { setRescheduleFor(null); setSelected(null); }}>Cancel</Button>
+              <Button onClick={confirmReschedule} disabled={!selected}>Confirm</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

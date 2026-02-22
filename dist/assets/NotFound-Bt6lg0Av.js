@@ -1,6 +1,0 @@
-import{a as s,j as e}from"./index-BToGKl4C.js";import{C as c,d as l,B as a}from"./card-D3FJTV3E.js";import{c as o}from"./createLucideIcon-DePTzsAY.js";/**
- * @license lucide-react v0.487.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */const r=[["circle",{cx:"12",cy:"12",r:"10",key:"1mglay"}],["line",{x1:"12",x2:"12",y1:"8",y2:"12",key:"1pkeuh"}],["line",{x1:"12",x2:"12.01",y1:"16",y2:"16",key:"4dfq90"}]],n=o("circle-alert",r);function x(){const t=s();return e.jsx("div",{className:"min-h-screen flex items-center justify-center p-4",style:{backgroundColor:"#f8f9fa"},children:e.jsx(c,{className:"max-w-md w-full",children:e.jsxs(l,{className:"p-8 text-center",children:[e.jsx("div",{className:"w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4",style:{backgroundColor:"#fef2f2"},children:e.jsx(n,{className:"w-8 h-8",style:{color:"#ef4444"}})}),e.jsx("h1",{className:"text-3xl font-bold mb-2",style:{color:"#0066FF"},children:"404"}),e.jsx("p",{className:"text-gray-600 mb-6",children:"Page not found"}),e.jsx(a,{onClick:()=>t("/login"),className:"text-white",style:{backgroundColor:"#0066FF"},children:"Back to Login"})]})})})}export{x as default};

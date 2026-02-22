@@ -1,4 +1,5 @@
 import { initializeApp, getApps } from 'firebase/app';
+import { getFunctions } from 'firebase/functions';
 import { getAuth, GoogleAuthProvider, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import { getFirestore, enableIndexedDbPersistence } from 'firebase/firestore';
 import { getAnalytics } from 'firebase/analytics';
@@ -32,6 +33,7 @@ export const db = app ? getFirestore(app) : undefined as any;
 export const googleProvider = app ? new GoogleAuthProvider() : undefined as any;
 export let analytics: any = undefined;
 export const storage = app ? getStorage(app) : undefined as any;
+export const functions = app ? getFunctions(app as any) : undefined as any;
 
 if (app) {
   setPersistence(auth, browserLocalPersistence).catch(() => {
